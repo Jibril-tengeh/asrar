@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asrar - Boutique de Contenu Numérique</title>
+    <style>
+        :root {
+            --primary-bg: #ffffff; --secondary-bg: #f8f9fa; --primary-text: #212529;
+            --secondary-text: #6c757d; --accent-color: #007bff; --border-color: #dee2e6;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+        [data-theme="dark"] {
+            --primary-bg: #121212; --secondary-bg: #1e1e1e; --primary-text: #e0e0e0;
+            --secondary-text: #a0a0a0; --accent-color: #4dabf7; --border-color: #444;
+            --shadow-color: rgba(255, 255, 255, 0.1);
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background-color: var(--primary-bg); color: var(--primary-text); transition: background-color 0.3s, color 0.3s; }
+        
+        #login-view { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: calc(100vh - 70px); padding: 1.5rem; box-sizing: border-box; }
+        .auth-form-wrapper { width: 100%; max-width: 400px; padding: 2.5rem; background-color: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px var(--shadow-color); }
+        .auth-form-wrapper h2 { text-align: center; margin-top: 0; margin-bottom: 1.5rem; }
+        .auth-form-wrapper input { width: 100%; padding: 0.75rem; margin-bottom: 1rem; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--primary-bg); color: var(--primary-text); font-size: 1rem; }
+        .auth-form-wrapper .btn { width: 100%; margin-top: 0.5rem; }
+        .auth-form-wrapper p { text-align: center; margin-top: 1.5rem; }
+
+        .header-container { position: sticky; top: 0; z-index: 1000; }
+
+        header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background-color: var(--secondary-bg); border-bottom: 1px solid var(--border-color); height: 70px; box-sizing: border-box; direction: ltr; }
+        header > * { direction: initial; }
+        .logo { font-size: 1.5rem; font-weight: bold; }
+        .header-actions { display: flex; align-items: center; gap: 0.5rem; }
+        .icon-btn { background: none; border: none; cursor: pointer; color: var(--primary-text); position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0; width: 40px; height: 40px; border-radius: 50%; transition: background-color 0.2s; }
+        .icon-btn:hover { background-color: var(--border-color); }
+        .icon-btn svg { width: 22px; height: 22px; stroke: var(--primary-text); pointer-events: none; }
+        .icon-btn.bookmarked svg { fill: var(--accent-color); stroke: var(--accent-color); }
+        [data-theme="light"] .sun-icon { display: none; } [data-theme="light"] .moon-icon { display: inline-block; }
+        [data-theme="dark"] .sun-icon { display: inline-block; } [data-theme="dark"] .moon-icon { display: none; }
+        
+        .menu-container { position: relative; }
+        .dropdown-menu { display: none; position: absolute; top: 120%; left: 50%; transform: translateX(-50%); background-color: var(--primary-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 12px var(--shadow-color); min-width: 160px; z-index: 1100; padding: 0.5rem 0; max-height: 300px; overflow-y: auto; }
+        html[dir="rtl"] .dropdown-menu { left: auto; right: 50%; transform: translateX(50%); }
+        .dropdown-menu.active { display: block; }
+        .dropdown-menu button { display: block; width: 100%; padding: 0.75rem 1rem; background: none; border: none; color: var(--primary-text); text-align: left; cursor: pointer; font-size: 0.95rem; }
+        html[dir="rtl"] .dropdown-menu button { text-align: right; }
+        .dropdown-menu button:hover { background-color: var(--secondary-bg); }
+
+        .secondary-header { display: flex; background-color: var(--secondary-bg); border-bottom: 1px solid var(--border-color); position: relative; }
+        .filter-section { flex: 1; display: flex; justify-content: center; align-items: center; padding: 0.5rem 0; }
+
+        #search-dropdown { position: absolute; top: 100%; left: 0; right: 0; background-color: var(--secondary-bg); padding: 1rem; box-shadow: 0 4px 12px var(--shadow-color); border-bottom: 1px solid var(--border-color); transform: translateY(-150%); z-index: -1; visibility: hidden; opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s; }
+        #search-dropdown.active { transform: translateY(0); visibility: visible; opacity: 1; z-index: 999; }
+        #search-input { width: 100%; padding: 0.75rem; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 4px; background-color: var(--primary-bg); color: var(--primary-text); font-size: 1rem; }
+
+        main { padding: 1.5rem; }
+        
+        .product-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; }
+        @media (max-width: 768px) { .product-grid { grid-template-columns: 1fr; } }
+
+        .product-card { background-color: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px var(--shadow-color); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 4px 12px var(--shadow-color); }
+        .product-card img { width: 100%; height: 150px; object-fit: cover; }
+        .product-card-body { padding: 1rem; }
+        .product-card-title { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.5rem; }
+        .product-card-info { display: flex; justify-content: space-between; align-items: center; color: var(--secondary-text); font-size: 0.9rem; }
+        .product-card-badge { background-color: var(--accent-color); color: white; padding: 0.2rem 0.5rem; border-radius: 4px; }
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .modal-content { background-color: var(--primary-bg); margin: auto; padding: 2rem; border: 1px solid var(--border-color); border-radius: 8px; width: 90%; max-width: 600px; position: relative; }
+        .close-btn { color: var(--secondary-text); position: absolute; top: 1rem; right: 1.5rem; font-size: 2rem; font-weight: bold; cursor: pointer; }
+        .btn { padding: 0.75rem 1.5rem; font-size: 1rem; border-radius: 5px; cursor: pointer; border: 1px solid transparent; font-weight: 600; transition: background-color 0.2s, color 0.2s, border-color 0.2s; text-decoration: none; }
+        .btn-primary { background-color: var(--accent-color); color: white; border-color: var(--accent-color); }
+        .hidden { display: none; }
+        .btn.loading { position: relative; color: transparent !important; pointer-events: none; }
+        .btn.loading::after { content: ''; position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; margin-top: -10px; margin-left: -10px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, 0.5); border-top-color: #ffffff; animation: spinner 0.8s linear infinite; }
+        @keyframes spinner { to { transform: rotate(360deg); } }
+        .whatsapp-fab { position: fixed; width: 60px; height: 60px; bottom: 25px; right: 25px; background-color: #25D366; color: #FFF; border-radius: 50%; text-align: center; font-size: 30px; box-shadow: 2px 2px 6px rgba(0,0,0,0.25); z-index: 1050; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease-in-out; }
+        html[dir="rtl"] .whatsapp-fab { right: auto; left: 25px; }
+        .whatsapp-fab:hover { transform: scale(1.1); }
+        .whatsapp-fab svg { width: 34px; height: 34px; fill: #FFF; }
+        
+        .content-display { margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem; }
+        .content-display img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
+        .content-display audio { width: 100%; margin: 1rem 0; }
+
+        .modal-actions { display: flex; gap: 0.5rem; margin-top: 1.5rem; margin-bottom: 1rem; align-items: center; }
+        .modal-actions .main-action { flex-grow: 1; }
+        
+        #purchased-list, #bookmarked-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+        @media (max-width: 600px) {
+            #purchased-list, #bookmarked-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        .purchased-card {
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px var(--shadow-color);
+        }
+        .purchased-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+        .purchased-card-body {
+            padding: 1rem;
+        }
+        .purchased-card-body h4 {
+            margin-top: 0;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+        .purchased-card-body .btn {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-container">
+        <header>
+            <div class="logo">Asrar</div>
+            <div class="header-actions">
+                <button class="icon-btn" id="theme-toggle" aria-label="Changer de thème"><span class="sun-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg></span><span class="moon-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></span></button>
+                <div class="menu-container">
+                    <button class="icon-btn" id="lang-switch-btn" data-lang-aria-label="changeLanguage" aria-label="Changer la langue"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></button>
+                    <div class="dropdown-menu" id="language-menu"><button data-lang="en">English</button><button data-lang="fr">Français</button></div>
+                </div>
+                <button class="icon-btn hidden" id="my-courses-btn" data-lang-aria-label="myCourses" aria-label="Mes Cours"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg></button>
+                <div class="menu-container" id="auth-container" style="display: none;">
+                    <button class="icon-btn" id="auth-btn" data-lang-aria-label="userProfile" aria-label="Profil utilisateur"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
+                    <div class="dropdown-menu" id="logout-menu"><button id="my-bookmarks-btn" data-lang-key="mySavedItems">Mes Articles</button><button id="logout-btn" data-lang-key="logout">Déconnexion</button></div>
+                </div>
+            </div>
+        </header>
+        <header class="secondary-header hidden">
+            <div class="filter-section"><button class="icon-btn" id="search-icon-btn" data-lang-aria-label="search" aria-label="Rechercher"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></button></div>
+            <div class="filter-section menu-container"><button class="icon-btn" id="type-filter-btn" data-lang-aria-label="filterByType" aria-label="Filtrer par type"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg></button><div class="dropdown-menu" id="type-filter-menu"><button data-value="all" data-lang-key="allTypes">Tous les types</button><button data-value="video" data-lang-key="video">Vidéo</button><button data-value="pdf" data-lang-key="pdf">PDF</button><button data-value="audio" data-lang-key="audio">Audio</button><button data-value="image" data-lang-key="image">Image</button><button data-value="content" data-lang-key="content">Contenu</button></div></div>
+            <div class="filter-section menu-container"><button class="icon-btn" id="currency-filter-btn" data-lang-aria-label="changeCurrency" aria-label="Changer de devise"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></button><div class="dropdown-menu" id="currency-filter-menu"></div></div>
+            <div class="filter-section menu-container"><button class="icon-btn" id="payment-filter-btn" data-lang-aria-label="filterByPayment" aria-label="Filtrer par paiement"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg></button><div class="dropdown-menu" id="payment-filter-menu"><button data-value="all" data-lang-key="all">Tout</button><button data-value="free" data-lang-key="free">Gratuit</button><button data-value="paid" data-lang-key="paid">Payant</button></div></div>
+        </header>
+        <div id="search-dropdown"><input type="search" id="search-input" data-lang-placeholder="searchByTitle" placeholder="Rechercher par titre..."></div>
+    </div>
+    <div id="login-view"></div>
+    <main style="display: none;"><div id="product-list" class="product-grid"></div></main>
+    <div id="product-detail-modal" class="modal"><div class="modal-content"><span class="close-btn">&times;</span><div id="modal-body"></div></div></div>
+    <div id="my-courses-modal" class="modal"><div class="modal-content"><span class="close-btn">&times;</span><h2 data-lang-key="myCourses">Mes Cours</h2><div id="purchased-list"></div></div></div>
+    <div id="my-bookmarks-modal" class="modal"><div class="modal-content"><span class="close-btn">&times;</span><h2 data-lang-key="mySavedItems">Mes Articles</h2><div id="bookmarked-list"></div></div></div>
+    <a href="https://wa.me/233559959168" class="whatsapp-fab" target="_blank" aria-label="Contactez-nous sur WhatsApp"><svg viewBox="0 0 32 32"><path d=" M19.11 17.205c-.372 0-1.088 1.39-1.518 1.39a.63.63 0 0 1-.315-.1c-.802-.402-1.504-.817-2.163-1.447-.545-.516-1.146-1.29-1.46-1.963a.426.426 0 0 1-.073-.215c0-.33.99-.945.99-1.49 0-.143-.73-2.09-.832-2.335-.143-.372-.214-.487-.6-.487-.187 0-.36-.044-.53-.044-.315 0-.765.11-1.057.332-.29.22-.504.546-.6.77-.29.586-.434 1.258-.434 1.956 0 1.512 1.39 3.374 1.518 3.567.129.195 2.158 3.25 5.22 4.618 1.09.482 1.956.817 2.629.99.817.215 1.518.187 2.05.113.72-.073 1.504-.63 1.729-1.258.225-.63.225-1.146.154-1.258-.073-.113-.244-.187-.516-.33z"></path></svg></a>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const firebaseConfig = {
+            apiKey: "AIzaSyBFwdvOLmVCcMMHRtwPsV_PwBAFmi7yvQM",
+            authDomain: "asrar-digital.firebaseapp.com",
+            databaseURL: "https://asrar-digital-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "asrar-digital",
+            storageBucket: "asrar-digital.appspot.com",
+            messagingSenderId: "1016291381878",
+            appId: "1:1016291381878:web:47ad2f2300950247618557"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth(); const db = firebase.database(); let allProducts = [];
+
+        const translations = {
+            en: { myCourses: "My Courses", userProfile: "User Profile", logout: "Logout", search: "Search", filterByType: "Filter by Type", changeCurrency: "Change Currency", filterByPayment: "Filter by Payment", searchByTitle: "Search by title...", login: "Login", signUp: "Sign Up", email: "Email", password: "Password", alreadyHaveAccount: "Already have an account? Login", noAccount: "No account? Sign Up", allTypes: "All Types", video: "Video", pdf: "PDF", audio: "Audio", image: "Image", content: "Content", all: "All", free: "Free", paid: "Paid", purchased: "Purchased", download: "Download", viewContent: "View Content", buyNow: "Buy Now", addToMyCourses: "Add to My Courses", saveItem: "Save", savedItem: "Saved", productAdded: "Product added!", noCoursesYet: "You don't have any courses yet.", accessContent: "Access Content", changeLanguage: "Change Language", theme: "Change theme", mySavedItems: "My Items", noSavedItemsYet: "You have no saved items yet.", view: "View", shareItem: "Share", linkCopied: "Link Copied!" },
+            fr: { myCourses: "Mes Cours", userProfile: "Profil utilisateur", logout: "Déconnexion", search: "Rechercher", filterByType: "Filtrer par type", changeCurrency: "Changer de devise", filterByPayment: "Filtrer par paiement", searchByTitle: "Rechercher par titre...", login: "Connexion", signUp: "S'inscrire", email: "Email", password: "Mot de passe", alreadyHaveAccount: "Déjà un compte ? Se connecter", noAccount: "Pas de compte ? S'inscrire", allTypes: "Tous les types", video: "Vidéo", pdf: "PDF", audio: "Audio", image: "Image", content: "Contenu", all: "Tout", free: "Gratuit", paid: "Payant", purchased: "Acquis", download: "Télécharger", viewContent: "Voir le contenu", buyNow: "Acheter", addToMyCourses: "Ajouter à mes cours", saveItem: "Enregistrer", savedItem: "Enregistré", productAdded: "Produit ajouté !", noCoursesYet: "Vous n'avez aucun cours pour le moment.", accessContent: "Accéder au contenu", changeLanguage: "Changer la langue", theme: "Changer de thème", mySavedItems: "Mes Articles", noSavedItemsYet: "Vous n'avez aucun article pour le moment.", view: "Voir", shareItem: "Partager", linkCopied: "Lien Copié !" }
+        };
+
+        let currentLang = localStorage.getItem('lang') || 'fr';
+
+        const setLanguage = (lang) => {
+            if (!translations[lang]) return;
+            currentLang = lang; localStorage.setItem('lang', lang); document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.querySelectorAll('[data-lang-key]').forEach(el => { const key = el.getAttribute('data-lang-key'); if (translations[lang][key]) el.textContent = translations[lang][key]; });
+            document.querySelectorAll('[data-lang-placeholder]').forEach(el => { const key = el.getAttribute('data-lang-placeholder'); if (translations[lang][key]) el.placeholder = translations[lang][key]; });
+            document.querySelectorAll('[data-lang-aria-label]').forEach(el => { const key = el.getAttribute('data-lang-aria-label'); if (translations[lang][key]) el.setAttribute('aria-label', translations[lang][key]); });
+            if (auth.currentUser) renderProducts(); else if(document.getElementById('auth-form')) renderAuthForm(document.querySelector('.auth-form-wrapper h2').getAttribute('data-lang-key') === 'signUp');
+        };
+
+        const langSwitchBtn = document.getElementById('lang-switch-btn'); const languageMenu = document.getElementById('language-menu');
+        langSwitchBtn.addEventListener('click', (e) => { e.stopPropagation(); languageMenu.classList.toggle('active'); });
+        languageMenu.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { setLanguage(e.target.dataset.lang); languageMenu.classList.remove('active'); } });
+
+        const getUserLocation = async () => {
+            try { const response = await fetch('https://ipapi.co/json/'); if (response.ok) { const data = await response.json(); return { country: data.country_name || 'Unknown', city: data.city || 'Unknown' }; } } catch (error) { console.warn("Could not fetch user location.", error); }
+            return { country: 'N/A', city: 'N/A' };
+        };
+        
+        let currentFilters = { search: '', type: 'all', payment: 'all' }; let userCurrency = 'USD'; let exchangeRates = null;
+
+        const formatPrice = (priceInUSD) => {
+            if (!priceInUSD || priceInUSD === 0) return translations[currentLang].free;
+            if (!exchangeRates || !userCurrency || !exchangeRates[userCurrency]) return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'USD' }).format(priceInUSD);
+            const localPrice = priceInUSD * exchangeRates[userCurrency];
+            return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: userCurrency, minimumFractionDigits: 2 }).format(localPrice);
+        };
+
+        const populateCurrencyMenu = async () => {
+            try { const response = await fetch('https://api.frankfurter.app/currencies'); let currencies = response.ok ? await response.json() : {}; const menu = document.getElementById('currency-filter-menu'); menu.innerHTML = ''; const manualCurrencies = { "GHS": "Cedi Ghanéen", "NGN": "Naira Nigérian", "XOF": "Franc CFA (BCEAO)", "GNF": "Franc Guinéen" }; const allCurrencies = {...currencies, ...manualCurrencies}; const sortedCodes = Object.keys(allCurrencies).sort(); for (const code of sortedCodes) { const button = document.createElement('button'); button.dataset.value = code; button.textContent = `${code} - ${allCurrencies[code]}`; menu.appendChild(button); } } catch (error) { console.error("Impossible de charger la liste des devises.", error); }
+        };
+
+        async function initializeCurrency() {
+            try { const [ratesResponse, geoResponse] = await Promise.all([ fetch('https://api.frankfurter.app/latest?from=USD'), fetch('https://ipapi.co/json/') ]); if (ratesResponse.ok) { const ratesData = await ratesResponse.json(); exchangeRates = ratesData.rates; exchangeRates['USD'] = 1; } exchangeRates['GHS'] = 15.00; exchangeRates['NGN'] = 1450.00; exchangeRates['XOF'] = 615.00; exchangeRates['GNF'] = 8600.00; if (geoResponse.ok) { const geoData = await geoResponse.json(); if (geoData && geoData.currency && exchangeRates[geoData.currency]) userCurrency = geoData.currency; } } catch (error) { console.warn("La détection de la devise a échoué, utilisation de l'USD par défaut.", error); }
+            finally { await populateCurrencyMenu(); renderProducts(); }
+        }
+
+        const themeToggle = document.getElementById('theme-toggle');
+        const setInitialTheme = () => { const savedTheme = localStorage.getItem('theme') || 'light'; document.documentElement.setAttribute('data-theme', savedTheme); };
+        themeToggle.addEventListener('click', () => { let currentTheme = document.documentElement.getAttribute('data-theme'); const newTheme = currentTheme === 'light' ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', newTheme); localStorage.setItem('theme', newTheme); });
+        
+        const loginView = document.getElementById('login-view'); const mainContent = document.querySelector('main'); const productListEl = document.getElementById('product-list'); const productDetailModal = document.getElementById('product-detail-modal'); const modalBody = document.getElementById('modal-body'); const myCoursesModal = document.getElementById('my-courses-modal'); const purchasedListEl = document.getElementById('purchased-list'); const myCoursesBtn = document.getElementById('my-courses-btn'); const myBookmarksBtn = document.getElementById('my-bookmarks-btn'); const myBookmarksModal = document.getElementById('my-bookmarks-modal'); const bookmarkedListEl = document.getElementById('bookmarked-list');
+        const authContainer = document.getElementById('auth-container'); const authBtn = document.getElementById('auth-btn'); const logoutMenu = document.getElementById('logout-menu'); const logoutBtn = document.getElementById('logout-btn');
+        const secondaryHeader = document.querySelector('.secondary-header');
+
+        const renderAuthForm = (isSignup = false) => {
+            const lang = currentLang;
+            loginView.innerHTML = `<div class="auth-form-wrapper"><h2 data-lang-key="${isSignup ? 'signUp' : 'login'}">${translations[lang][isSignup ? 'signUp' : 'login']}</h2><form id="auth-form"><input type="email" id="auth-email" placeholder="${translations[lang].email}" required><input type="password" id="auth-password" placeholder="${translations[lang].password}" required><button type="submit" class="btn btn-primary" data-lang-key="${isSignup ? 'signUp' : 'login'}">${translations[lang][isSignup ? 'signUp' : 'login']}</button></form><p id="auth-error" style="color:red;"></p><p><a href="#" id="toggle-auth-mode" data-lang-key="${isSignup ? 'alreadyHaveAccount' : 'noAccount'}">${translations[lang][isSignup ? 'alreadyHaveAccount' : 'noAccount']}</a></p></div>`;
+            document.getElementById('toggle-auth-mode').onclick = (e) => { e.preventDefault(); renderAuthForm(!isSignup); };
+            document.getElementById('auth-form').onsubmit = (e) => {
+                e.preventDefault(); const submitButton = e.target.querySelector('button[type="submit"]'); const errorEl = document.getElementById('auth-error'); const email = document.getElementById('auth-email').value; const password = document.getElementById('auth-password').value; errorEl.textContent = ''; submitButton.classList.add('loading'); submitButton.disabled = true;
+                if (isSignup) { auth.createUserWithEmailAndPassword(email, password).then(async (cred) => { const location = await getUserLocation(); const userData = { email: email, createdAt: firebase.database.ServerValue.TIMESTAMP, location: location }; await db.ref('users/' + cred.user.uid).set(userData); }).catch(err => { errorEl.textContent = err.message; }).finally(() => { submitButton.classList.remove('loading'); submitButton.disabled = false; }); } else { auth.signInWithEmailAndPassword(email, password).catch(err => { errorEl.textContent = err.message; }).finally(() => { submitButton.classList.remove('loading'); submitButton.disabled = false; }); }
+            };
+        };
+
+        authBtn.addEventListener('click', (e) => { e.stopPropagation(); logoutMenu.classList.toggle('active'); });
+        logoutBtn.addEventListener('click', () => { auth.signOut(); });
+
+        auth.onAuthStateChanged(user => {
+            if (user) { loginView.style.display = 'none'; mainContent.style.display = 'block'; secondaryHeader.classList.remove('hidden'); myCoursesBtn.classList.remove('hidden'); authContainer.style.display = 'block'; loadProducts(); }
+            else { loginView.style.display = 'flex'; mainContent.style.display = 'none'; secondaryHeader.classList.add('hidden'); myCoursesBtn.classList.add('hidden'); authContainer.style.display = 'none'; logoutMenu.classList.remove('active'); renderAuthForm(); }
+        });
+
+        const loadProducts = () => {
+            db.ref('products').on('value', snapshot => {
+                const data = snapshot.val();
+                allProducts = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
+                renderProducts();
+                const urlParams = new URLSearchParams(window.location.search);
+                const productIdFromUrl = urlParams.get('product');
+                if (productIdFromUrl && allProducts.some(p => p.id === productIdFromUrl)) {
+                    openProductModal(productIdFromUrl);
+                    const cleanUrl = new URL(window.location); cleanUrl.searchParams.delete('product'); window.history.replaceState({}, document.title, cleanUrl);
+                }
+            });
+        };
+        
+        const renderProducts = async () => {
+            if (!auth.currentUser) { productListEl.innerHTML = ''; return; }
+            const user = auth.currentUser; const snapshot = await db.ref(`users/${user.uid}/purchases`).once('value'); const userPurchases = snapshot.val() || {};
+            const filtered = allProducts.filter(p => { const title = (p.title || '').toLowerCase(); const description = (p.description || '').toLowerCase(); const searchMatch = title.includes(currentFilters.search) || description.includes(currentFilters.search); const typeMatch = currentFilters.type === 'all' || p.type === currentFilters.type; const paymentMatch = currentFilters.payment === 'all' || (currentFilters.payment === 'free' && p.isFree) || (currentFilters.payment === 'paid' && !p.isFree); return searchMatch && typeMatch && paymentMatch; });
+            productListEl.innerHTML = filtered.map(p => `<div class="product-card" data-product-id="${p.id}"><img src="${p.thumbnailURL}" alt="${p.title}"><div class="product-card-body"><h4 class="product-card-title">${p.title}</h4><div class="product-card-info"><span>${formatPrice(p.isFree ? 0 : p.price)}</span>${userPurchases[p.id] ? `<span class="product-card-badge" data-lang-key="purchased">${translations[currentLang].purchased}</span>` : ''}</div></div></div>`).join('');
+        };
+        
+        const searchDropdown = document.getElementById('search-dropdown');
+        document.getElementById('search-icon-btn').addEventListener('click', (e) => { e.stopPropagation(); searchDropdown.classList.toggle('active'); if (searchDropdown.classList.contains('active')) document.getElementById('search-input').focus(); });
+        document.getElementById('search-input').addEventListener('input', (e) => { currentFilters.search = e.target.value.toLowerCase(); renderProducts(); });
+
+        const setupFilterMenu = (btnId, menuId, filterKey) => {
+            const btn = document.getElementById(btnId); const menu = document.getElementById(menuId);
+            btn.addEventListener('click', (e) => { e.stopPropagation(); document.querySelectorAll('.dropdown-menu.active').forEach(m => { if (m !== menu) m.classList.remove('active'); }); menu.classList.toggle('active'); });
+            menu.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') { if (filterKey === 'currency') userCurrency = e.target.dataset.value; else currentFilters[filterKey] = e.target.dataset.value; renderProducts(); menu.classList.remove('active'); } });
+        };
+        setupFilterMenu('type-filter-btn', 'type-filter-menu', 'type'); setupFilterMenu('payment-filter-btn', 'payment-filter-menu', 'payment'); setupFilterMenu('currency-filter-btn', 'currency-filter-menu', 'currency');
+
+        async function openProductModal(productId) {
+            const product = allProducts.find(p => p.id === productId); if (!product) return;
+            const user = auth.currentUser; if (!user) return;
+            const [isPurchasedSnap, isBookmarkedSnap] = await Promise.all([ db.ref(`users/${user.uid}/purchases/${productId}`).once('value'), db.ref(`users/${user.uid}/bookmarks/${productId}`).once('value') ]);
+            const isPurchased = isPurchasedSnap.exists(); const isBookmarked = isBookmarkedSnap.exists(); let actionButton = ''; let contentHTML = ''; const downloadableTypes = ['pdf', 'video', 'audio', 'image']; const productTitle = product.title;
+            
+            if (product.type === 'content' && (isPurchased || product.isFree)) { 
+                const contentSnap = await db.ref(`texts/${product.textContentId}`).once('value'); 
+                if(contentSnap.exists()) contentHTML = `<div class="content-display">${contentSnap.val().content}</div>`; 
+            }
+            
+            if (isPurchased || product.isFree) {
+                if (downloadableTypes.includes(product.type)) {
+                    actionButton = `<a href="${product.mediaURL}" download="${productTitle}" class="btn btn-primary main-action" data-lang-key="download">${translations[currentLang].download}</a>`;
+                } else if (product.type !== 'content') {
+                    actionButton = `<a href="${product.mediaURL}" target="_blank" class="btn btn-primary main-action" data-lang-key="viewContent">${translations[currentLang].viewContent}</a>`;
+                }
+            } else {
+                // --- THIS IS THE CRUCIAL PART FOR AUTOMATION ---
+                // In your Firebase database, make sure paystackLink has placeholders
+                // e.g., https://paystack.com/pay/xyz?email=EMAIL_PLACEHOLDER&metadata[user_id]=USER_ID_PLACEHOLDER&metadata[product_id]=PRODUCT_ID_PLACEHOLDER
+                let dynamicPaystackLink = product.paystackLink
+                    .replace('EMAIL_PLACEHOLDER', encodeURIComponent(user.email))
+                    .replace('USER_ID_PLACEHOLDER', user.uid)
+                    .replace('PRODUCT_ID_PLACEHOLDER', product.id);
+                    
+                actionButton = `<a href="${dynamicPaystackLink}" target="_blank" class="btn btn-primary main-action" data-lang-key="buyNow">${translations[currentLang].buyNow}</a>`;
+            }
+
+            if (product.isFree && !isPurchased) {
+                actionButton = `<button class="btn btn-primary main-action" id="add-free-btn" data-product-id="${product.id}" data-lang-key="addToMyCourses">${translations[currentLang].addToMyCourses}</button>`;
+            }
+
+            const bookmarkBtnClass = isBookmarked ? 'icon-btn bookmarked' : 'icon-btn';
+            const bookmarkTooltip = isBookmarked ? translations[currentLang].savedItem : translations[currentLang].saveItem;
+
+            modalBody.innerHTML = `<h2>${productTitle}</h2> ${product.type !== 'content' && product.previewURL ? `<iframe width="100%" height="315" src="${product.previewURL}" frameborder="0" allowfullscreen></iframe>` : `<img src="${product.thumbnailURL}" style="width:100%">`} <p>${product.description || ''}</p> <p><strong>${formatPrice(product.isFree ? 0 : product.price)}</strong></p>
+                <div class="modal-actions">
+                    <div class="main-action">${actionButton}</div>
+                    <button class="${bookmarkBtnClass}" id="bookmark-btn" data-product-id="${product.id}" title="${bookmarkTooltip}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg></button>
+                    <button class="icon-btn" id="share-btn" data-product-id="${product.id}" title="${translations[currentLang].shareItem}"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg></button>
+                </div>
+                ${contentHTML}`;
+            productDetailModal.classList.add('active');
+        }
+
+        productListEl.addEventListener('click', e => { const card = e.target.closest('.product-card'); if (card) openProductModal(card.dataset.productId); });
+        
+        document.addEventListener('click', async (e) => {
+            const bookmarkBtn = e.target.closest('#bookmark-btn');
+            const shareBtn = e.target.closest('#share-btn');
+            
+            if (e.target.id === 'add-free-btn') { const user = auth.currentUser; if (!user) return; const productId = e.target.dataset.productId; const purchaseData = { userId: user.uid, productId: productId, createdAt: firebase.database.ServerValue.TIMESTAMP }; db.ref(`users/${user.uid}/purchases/${productId}`).set(true); db.ref('purchases').push(purchaseData).then(() => { alert(translations[currentLang].productAdded); closeModal(productDetailModal); renderProducts(); }); }
+            if (bookmarkBtn) { const user = auth.currentUser; if (!user) return; const productId = bookmarkBtn.dataset.productId; const bookmarkRef = db.ref(`users/${user.uid}/bookmarks/${productId}`); bookmarkRef.once('value', s => { if (s.exists()) { bookmarkRef.remove(); bookmarkBtn.classList.remove('bookmarked'); bookmarkBtn.title = translations[currentLang].saveItem; } else { bookmarkRef.set(true); bookmarkBtn.classList.add('bookmarked'); bookmarkBtn.title = translations[currentLang].savedItem; } }); }
+            if (shareBtn) {
+                const productId = shareBtn.dataset.productId; const product = allProducts.find(p => p.id === productId); if (!product) return;
+                const url = new URL(window.location.href); url.searchParams.set('product', productId); const shareableUrl = url.toString();
+                const shareData = { title: product.title, text: product.description, url: shareableUrl };
+                if (navigator.share) { try { await navigator.share(shareData); } catch (err) { console.log('Share was cancelled', err); } }
+                else { navigator.clipboard.writeText(shareableUrl).then(() => { alert(translations[currentLang].linkCopied); }).catch(err => { console.error('Failed to copy link', err); alert('Could not copy link.'); }); }
+            }
+        });
+
+        myCoursesBtn.addEventListener('click', async () => {
+            const user = auth.currentUser; if (!user) return; logoutMenu.classList.remove('active');
+            const snap = await db.ref(`users/${user.uid}/purchases`).once('value'); const ids = snap.val() ? Object.keys(snap.val()) : [];
+            if (ids.length === 0) {
+                purchasedListEl.innerHTML = `<p data-lang-key="noCoursesYet">${translations[currentLang].noCoursesYet}</p>`;
+            } else {
+                purchasedListEl.innerHTML = allProducts.filter(p => ids.includes(p.id)).map(p => {
+                    const productTitle = p.title; let button;
+                    if (['pdf', 'video', 'audio', 'image'].includes(p.type)) { button = `<a href="${p.mediaURL}" download="${productTitle}" class="btn btn-primary" data-lang-key="download">${translations[currentLang].download}</a>`; } else if (p.type === 'content') { button = `<button class="btn btn-primary access-content-btn" data-product-id="${p.id}" data-lang-key="accessContent">${translations[currentLang].accessContent}</button>`; } else { button = `<a href="${p.mediaURL}" target="_blank" class="btn btn-primary" data-lang-key="accessContent">${translations[currentLang].accessContent}</a>`; }
+                    return `<div class="purchased-card"><img src="${p.thumbnailURL}" alt="${productTitle}"><div class="purchased-card-body"><h4>${productTitle}</h4>${button}</div></div>`;
+                }).join('');
+            }
+            myCoursesModal.classList.add('active');
+        });
+
+        myBookmarksBtn.addEventListener('click', async () => {
+            const user = auth.currentUser; if (!user) return; logoutMenu.classList.remove('active');
+            const snap = await db.ref(`users/${user.uid}/bookmarks`).once('value'); const ids = snap.val() ? Object.keys(snap.val()) : [];
+            if (ids.length === 0) { bookmarkedListEl.innerHTML = `<p data-lang-key="noSavedItemsYet">${translations[currentLang].noSavedItemsYet}</p>`; } else {
+                bookmarkedListEl.innerHTML = allProducts.filter(p => ids.includes(p.id)).map(p => {
+                    const productTitle = p.title; const viewButton = `<button class="btn btn-primary view-product-btn" data-product-id="${p.id}" data-lang-key="view">${translations[currentLang].view}</button>`;
+                    return `<div class="purchased-card"><img src="${p.thumbnailURL}" alt="${productTitle}"><div class="purchased-card-body"><h4>${productTitle}</h4>${viewButton}</div></div>`;
+                }).join('');
+            }
+            myBookmarksModal.classList.add('active');
+        });
+        
+        purchasedListEl.addEventListener('click', e => { if (e.target.classList.contains('access-content-btn')) { closeModal(myCoursesModal); openProductModal(e.target.dataset.productId); } });
+        bookmarkedListEl.addEventListener('click', e => { if (e.target.classList.contains('view-product-btn')) { closeModal(myBookmarksModal); openProductModal(e.target.dataset.productId); } });
+
+        const closeModal = (modal) => modal.classList.remove('active');
+        document.querySelectorAll('.modal .close-btn').forEach(btn => btn.onclick = () => closeModal(btn.closest('.modal')));
+        
+        window.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) closeModal(e.target);
+            if (!e.target.closest('.menu-container')) document.querySelectorAll('.dropdown-menu.active').forEach(menu => menu.classList.remove('active'));
+            const searchIconBtn = document.getElementById('search-icon-btn');
+            if (!searchDropdown.contains(e.target) && !searchIconBtn.contains(e.target)) searchDropdown.classList.remove('active');
+        });
+
+        setInitialTheme(); 
+        initializeCurrency();
+        setLanguage(currentLang);
+    });
+    </script>
+</body>
+</html>
